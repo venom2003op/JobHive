@@ -122,6 +122,10 @@ const RegisterRecruiter = () => {
     setIsError(false);
   };
 
+ const googleAuth = () => {
+   window.open("http://localhost:8050/emp/auth/google/callback", "_self");
+ };
+
   return (
     <React.Fragment>
       {(
@@ -142,7 +146,7 @@ const RegisterRecruiter = () => {
               <div className="mt-4 flex flex-col items-center">
                 <h1 className="text-2xl xl:text-3xl font-extrabold">Sign up</h1>
                 <div className="flex flex-col items-center">
-                  <button className="w-full my-4 max-w-xs font-bold shadow-sm rounded-lg py-3 bg-indigo-100 text-gray-800 flex items-center justify-center transition-all duration-300 ease-in-out focus:outline-none hover:shadow focus:shadow-sm focus:shadow-outline">
+                  <button onClick={googleAuth} className="w-full my-4 max-w-xs font-bold shadow-sm rounded-lg py-3 bg-indigo-100 text-gray-800 flex items-center justify-center transition-all duration-300 ease-in-out focus:outline-none hover:shadow focus:shadow-sm focus:shadow-outline">
                     <div className="bg-white ml-4 p-1 rounded-full">
                       <FaGoogle />
                     </div>

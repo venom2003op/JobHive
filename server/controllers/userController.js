@@ -7,56 +7,52 @@ import nodemailer from "nodemailer";
 import mailSender from "../config/mailSender.js";
 import userModel from "../model/userModel.js";
 import RegistrationMailOfuser from "../config/registrationmailofUser.js";
-export const createUser = async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(422).json({ errors: errors.array() });
-    }
-    const isFirstAccount = (await userModel.countDocuments()) === 0;
-    const role = isFirstAccount ? "admin" : "user";
-    const { name, email, password, confirmPassword } = req.body;
-    let existingUser;
-    try {
-      existingUser = await userModel.findOne({ email: email });
-    } catch (err) {
-      return res
-        .status(500)
-        .json({ message: "Something went wrong", error: err.message });
-    }
-    if (existingUser) {
-      return res.status(422).json({ message: "User already exists" });
-    }
-    if (password !== confirmPassword) {
-      return res
-        .status(422)
-        .json({ message: "Confirm Passwords do not match" });
-    }
-    let hashedPassword;
-    try {
-      hashedPassword = await bcrypt.hash(password, 12);
-    } catch (err) {
-      return res
-        .status(500)
-        .json({ message: "Something went wrong", error: err.message });
-    }
-    const user = new userModel({
-      name,
-      email,
-      password: hashedPassword,
-      role,
-    });
-    try {
+import { catchAsyncError } from "../middleware/catchAsyncError.js";
+import ErrorHandler from "../middleware/error.js";
+export const createUser = catchAsyncError(async (req, res,next) => {
+  const errors=validationResult(req);
+  if(!errors.isEmpty()){
+      return next(new ErrorHandler(422,errors.array()))
+  }
+  //check for admin
+  const count=await userModel.find();
+  
+  const {email, name , phone,password ,role,confirmPassword} = req.body;
+  
+  if(role==="admin" && count.length>0){
+      return next(new ErrorHandler(422,"Only one admin is allowed!"))
+  }
+
+  if(password!==confirmPassword){
+      return next(new ErrorHandler(422,"Passwords do not match!"))
+  }
+  const isEmail=await userModel.findOne({email:email});
+  let existingUser;
+  try{
+      existingUser=await userModel.findOne({email:email });
+  }catch(err){
+      return next(new ErrorHandler(500,"Something went wrong!"))
+  }
+  if(existingUser){
+      return next(new ErrorHandler(422,"User already exists!"))
+  }
+  
+  const user = new userModel({
+    email,
+    name,
+    phone,
+    password,
+    role,
+  });
+  try{
       await user.save();
       RegistrationMailOfuser(email);
-      res
-        .status(201)
-        .json({ message: "user created successfully", data: user });
-    } catch (err) {
-      return res
-        .status(500)
-        .json({ message: "Something went wrong", error: err.message });
-    }
-}
+      return res.status(200).json({message:"User registered successfully!"})
+  }catch(err){
+      return next(new ErrorHandler(500, "Something went wrong!"));
+  }
+  
+})
 
 export const loginUser = async (req, res) => {
     const errors=validationResult(req);
